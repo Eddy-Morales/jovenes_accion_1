@@ -1,6 +1,5 @@
 <?php
 // ...existing code...
-
 session_start(); // <-- permite multi-paso (SESSION) sin romper el flujo de 1 solo form
 require __DIR__ . '/vendor/autoload.php';
 
@@ -32,34 +31,22 @@ foreach ($datos as $k => $v) {
     $tp->setValue($k, $norm($v));
 }
 
+// asegura que la plantilla reciba el valor (placeholder ${codigo}) — ponerlo AFTER del foreach
+$tp->setValue('codigo', $codigo);
+
 // Asegura SI/NO en mayúsculas si existen estos radios
 foreach (['recuperacion', 'actualizacion'] as $r) {
     if (isset($datos[$r])) $tp->setValue($r, strtoupper($norm($datos[$r])));
 }
 
-// --- NUEVO: generar imagen QR (opcional) e insertarla en el template ---
+// --- QR eliminado: ya no se genera ni se inserta imagen ---
+
+// Guardar y descargar
 $outDir = __DIR__ . '/salida';
 if (!is_dir($outDir)) mkdir($outDir, 0775, true);
 
-$tmpDir = $outDir . '/tmp';
-if (!is_dir($tmpDir)) mkdir($tmpDir, 0775, true);
-
-// Genera QR usando Google Chart API (puedes cambiar por otra librería si prefieres local)
-$qrFile = $tmpDir . '/qr_' . preg_replace('/[^A-Z0-9_-]/', '_', $codigo) . '.png';
-$qrUrl = 'https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=' . urlencode($codigo);
-file_put_contents($qrFile, file_get_contents($qrUrl));
-
-// Inserta la imagen en el marcador ${qr_codigo} de la plantilla
-// Asegúrate de tener en la plantilla un campo de imagen con el nombre "qr_codigo"
-$tp->setImageValue('qr_codigo', array('path' => $qrFile, 'width' => 120, 'height' => 120, 'ratio' => false));
-// --- FIN nuevo ---
-
-// Guardar y descargar
 $out = $outDir . '/Acta_Inspeccion_' . date('Ymd_His') . '.docx';
 $tp->saveAs($out);
-
-// limpia el tmp QR
-if (is_file($qrFile)) @unlink($qrFile);
 
 header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 header('Content-Disposition: attachment; filename="' . basename($out) . '"');
@@ -68,3 +55,4 @@ readfile($out);
 
 // Si fue un flujo multi-paso, limpia sesión para iniciar un nuevo registro
 session_destroy();
+// ...existing code...
